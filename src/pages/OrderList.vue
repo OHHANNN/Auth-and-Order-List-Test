@@ -1,11 +1,36 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/api'
+
 import TablePagination from 'components/TablePagination.vue'
+import OrderFilters from 'components/OrderFilters.vue'
 
 const orders = ref([])
 const selected = ref([])
 const loading = ref(false)
+
+const filteredOrders = computed(() => {
+  return orders.value.filter((order) => {
+    return (
+      ((!filters.value.order_status || order.order_status === filters.value.order_status) &&
+        (!filters.value.financial_status ||
+          order.financial_status === filters.value.financial_status) &&
+        (!filters.value.fulfillment_status ||
+          order.fulfillment_status === filters.value.fulfillment_status) &&
+        (!filters.value.delivery_date || order.delivery_date === filters.value.delivery_date) &&
+        filters.value.city.length === 0) ||
+      filters.value.city.includes(order.city)
+    )
+  })
+})
+
+const filters = ref({
+  order_status: '',
+  financial_status: '',
+  fulfillment_status: '',
+  delivery_date: null,
+  city: [],
+})
 
 const pagination = ref({
   sortBy: 'desc',
@@ -36,6 +61,7 @@ const fetchOrders = async () => {
   loading.value = true
   try {
     const res = await api.get('/orders')
+
     orders.value = res.data.content
   } catch (err) {
     console.error('Error: ', err)
@@ -59,11 +85,12 @@ onMounted(fetchOrders)
 
 <template>
   <q-page class="q-pa-md">
+    <order-filters @update:filters="(newFilters) => (filters = newFilters)" />
+
     <q-table
       v-model:selected="selected"
       v-model:pagination="pagination"
-      :pagination-label="(start, end, total) => `${end}筆中的的第 ${start} - ${end} 筆`"
-      :rows="orders"
+      :rows="filteredOrders"
       :columns="columns"
       row-key="id"
       flat
@@ -76,7 +103,7 @@ onMounted(fetchOrders)
         <table-pagination
           :pagination="pagination"
           :orders="orders"
-          @update:pagination="pagination = $event"
+          @update:pagination="updatePagination"
         />
       </template>
 
