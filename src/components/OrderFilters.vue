@@ -1,5 +1,6 @@
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import {
   orderStatusOptions,
   financialStatusOptions,
@@ -8,6 +9,7 @@ import {
 } from 'src/constants/filterOptions'
 
 const emit = defineEmits(['update:filters'])
+const route = useRoute()
 
 const filters = ref({
   order_status: '',
@@ -17,6 +19,18 @@ const filters = ref({
   city: [],
 })
 
+// 初始化 filter（根據 URL query）
+onMounted(() => {
+  const query = route.query
+
+  filters.value.order_status = query.order_status || ''
+  filters.value.financial_status = query.financial_status || ''
+  filters.value.fulfillment_status = query.fulfillment_status || ''
+  filters.value.delivery_date = query.delivery_date || null
+  filters.value.city = query.city ? (Array.isArray(query.city) ? query.city : [query.city]) : []
+})
+
+// 發射 filters 給父層
 watch(
   filters,
   (newFilters) => {
@@ -86,6 +100,7 @@ watch(
       label="配送縣市"
       emit-value
       multiple
+      map-options
       use-chips
       outlined
       dense

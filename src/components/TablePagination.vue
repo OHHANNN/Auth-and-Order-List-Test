@@ -2,14 +2,9 @@
 import { computed, watch } from 'vue'
 
 const props = defineProps({
-  orders: {
-    type: Array,
-    required: true,
-  },
-  pagination: {
-    type: Object,
-    required: true,
-  },
+  orders: Array,
+  pagination: Object,
+  total: Number,
 })
 
 const emit = defineEmits(['update:pagination'])
@@ -33,23 +28,20 @@ const localPagination = computed({
   },
 })
 
-// 計算最大頁數
 const maxPage = computed(() => {
-  const totalRows = props.orders.length
   return localPagination.value.rowsPerPage === 0
     ? 1
-    : Math.ceil(totalRows / localPagination.value.rowsPerPage)
+    : Math.ceil(props.total / localPagination.value.rowsPerPage)
 })
 
-// 計算顯示的起始和結束索引
 const startIndex = computed(() => {
   const start = (localPagination.value.page - 1) * localPagination.value.rowsPerPage + 1
-  return start > props.orders.length ? props.orders.length : start
+  return start > props.total ? props.total : start
 })
 
 const endIndex = computed(() => {
   const end = localPagination.value.page * localPagination.value.rowsPerPage
-  return end > props.orders.length ? props.orders.length : end
+  return end > props.total ? props.total : end
 })
 
 // 監聽本地 pagination，並發送更新到父層
@@ -76,9 +68,9 @@ watch(
     />
 
     <!-- 顯示起始和結束索引 -->
-    <span> 顯示第 {{ startIndex }} - {{ endIndex }} 筆，共 {{ orders.length }} 筆 </span>
+    <span> 顯示第 {{ startIndex }} - {{ endIndex }} 筆，共 {{ props.total }} 筆 </span>
 
-    <div v-if="localPagination.rowsPerPage < orders.length" class="flex no-wrap">
+    <div v-if="localPagination.rowsPerPage < props.total" class="flex no-wrap">
       <q-btn
         icon="first_page"
         color="grey-8"
@@ -114,7 +106,7 @@ watch(
         dense
         flat
         :disable="localPagination.page === maxPage"
-        @click="localPagination.page = maxPage"
+        @click="localPagination.page = maxPage - 1"
       />
     </div>
   </div>
